@@ -1,0 +1,8 @@
+^YM5KPZ^0
+
+Baslirska KPZ
+
+^WA^0 ....... Open app
+^WB^0 ....... Next
+^WX^0 ....... Close app
+^WY^0 ....... Exit
