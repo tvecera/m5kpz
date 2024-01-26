@@ -49,7 +49,7 @@ The graphical interface for individual applications is adapted and inspired by t
 Battery Charger: [Volos Project - ChargerM5StickC](https://github.com/VolosR/chargerM5StickC).
 
 ## Sensors
-
+- **ENV HAT**: [ENV HAT Documentation](https://docs.m5stack.com/en/hat/hat-env)
 - **ENV III Unit**: [ENV III Documentation](https://docs.m5stack.com/en/unit/envIII)
 - **NCIR2 Unit**: [NCIR2 Documentation](https://docs.m5stack.com/en/unit/NCIR2)
 - **TVOC/eCO2 Unit**: [TVOC/eCO2 Documentation](https://docs.m5stack.com/en/unit/tvoc)
