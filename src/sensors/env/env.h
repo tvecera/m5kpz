@@ -1,7 +1,7 @@
 /**
 * MIT License
 *
-* Copyright (c) 2024 Tomas Vecera, tomas@vecera.dev
+* Copyright (c) 2024 Ondrej Kolonicny, ondra@ok1cdj.com
 *
 * The UI of this software is based on the Volos ESP32 Li-ion Battery Charger:
 *   Repository: https://github.com/VolosR/chargerM5StickC

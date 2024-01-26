@@ -1,7 +1,7 @@
 /**
 * MIT License
 *
-* Copyright (c) 2024 Tomas Vecera, tomas@vecera.dev
+* Copyright (c) 2024 Ondrej Kolonicny, ondra@ok1cdj.com
 *
 * The UI of this software is based on the Volos ESP32 Li-ion Battery Charger:
 *   Repository: https://github.com/VolosR/chargerM5StickC
@@ -21,6 +21,8 @@
 */
 #include "env.h"
 
+#define ENV_BMP280_ADDRESS 0x76
+
 Env::Env(LGFX_Sprite *spr) {
 	sprite = spr;
 }
@@ -30,19 +32,19 @@ bool Env::initSensor() {
 	return true;
 #else
 #ifdef M5STICK
-	return (Wire.begin(0,26) && bme280.begin(0x76));
+	return (Wire.begin(0, 26) && bme280.begin(ENV_BMP280_ADDRESS));
 #else
 	Wire.setSCL(PORT_A_SCL_PIN);
 	Wire.setSDA(PORT_A_SDA_PIN);
 	Wire.begin();
-	return (dht12.init() && bme280.init());
+	return (bme280.begin(ENV_BMP280_ADDRESS));
 #endif
 #endif
 }
 
 void Env::drawSensorData(uint16_t background) {
 	sprite->setTextColor(TFT_WHITE, background);
-		sprite->setFont(&DSEG7_Classic_Bold_32);
+	sprite->setFont(&DSEG7_Classic_Bold_32);
 	sprite->drawString(String(tmp).c_str(), 10, 30);
 
 	sprite->fillRoundRect(10, 72, DISPLAY_WIDTH - 20, 46, 4, COLOR);
@@ -59,6 +61,7 @@ void Env::drawSensorData(uint16_t background) {
 }
 
 #ifndef EMULATOR
+
 void Env::timer(void *pvParameters) {
 	auto *instance = static_cast<Env *>(pvParameters);
 
@@ -71,14 +74,14 @@ void Env::timer(void *pvParameters) {
 		timer_pressure = timer_pressure / 100;
 		timer_tmp = instance->dht12.readTemperature();
 		timer_hum = instance->dht12.readHumidity();
-	/*	if (instance->dht12.get() == 0) {
-			timer_tmp = instance->sht30.cTemp;
-			timer_hum = instance->sht30.humidity;
-		} else {
-			timer_tmp = 0,
-					timer_hum = 0;
-		}
-*/	
+		/*	if (instance->dht12.get() == 0) {
+				timer_tmp = instance->sht30.cTemp;
+				timer_hum = instance->sht30.humidity;
+			} else {
+				timer_tmp = 0,
+						timer_hum = 0;
+			}
+	*/
 		if (xSemaphoreTake(instance->mutex, portTICK_PERIOD_MS * 10) == pdTRUE) {
 			instance->sensor_tmp = timer_tmp;
 			instance->sensor_hum = timer_hum;
@@ -87,6 +90,7 @@ void Env::timer(void *pvParameters) {
 		}
 	}
 }
+
 #endif
 
 void Env::open() {
