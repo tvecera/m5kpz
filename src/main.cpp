@@ -19,6 +19,7 @@
 #include "api.h"
 
 // Sensors
+#include "sensors/env/env.h"
 #include "sensors/enviii/enviii.h"
 #include "sensors/ncir/ncir.h"
 #include "sensors/tvoc/tvoc.h"
@@ -55,6 +56,7 @@ typedef IUnit *(*CreateFunction)();
 
 CreateFunction functions[20];
 
+IUnit *createEnv() { return new Env(spr); }
 IUnit *createEnvIII() { return new EnvIII(spr); }
 IUnit *createNcir() { return new Ncir(spr); }
 IUnit *createTvoc() { return new Tvoc(spr); }
@@ -136,7 +138,8 @@ void setup() {
 	spr->setSwapBytes(true);
 
 	uint8_t idx = 0;
-
+	
+	functions[idx++] = createEnv;
 	functions[idx++] = createEnvIII;
 	functions[idx++] = createNcir;
 	functions[idx++] = createTvoc;
@@ -192,4 +195,4 @@ void loop() {
 	active = active + 1;
 	if (active >= len)
 		active = 0;
-}
+	}
