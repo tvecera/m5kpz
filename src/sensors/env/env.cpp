@@ -74,14 +74,7 @@ void Env::timer(void *pvParameters) {
 		timer_pressure = timer_pressure / 100;
 		timer_tmp = instance->dht12.readTemperature();
 		timer_hum = instance->dht12.readHumidity();
-		/*	if (instance->dht12.get() == 0) {
-				timer_tmp = instance->sht30.cTemp;
-				timer_hum = instance->sht30.humidity;
-			} else {
-				timer_tmp = 0,
-						timer_hum = 0;
-			}
-	*/
+	
 		if (xSemaphoreTake(instance->mutex, portTICK_PERIOD_MS * 10) == pdTRUE) {
 			instance->sensor_tmp = timer_tmp;
 			instance->sensor_hum = timer_hum;
@@ -94,7 +87,7 @@ void Env::timer(void *pvParameters) {
 #endif
 
 void Env::open() {
-	bool connected = splash(F("ENV Unit"), F("Connect"), EnvUnitImg, 100, 131, true);
+	bool connected = splash(F("ENV HAT"), F("Connect"), EnvUnitImg, 100, 99, true);
 
 	if (connected) {
 		unit_connected();
