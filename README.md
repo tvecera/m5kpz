@@ -58,6 +58,7 @@ Battery Charger: [Volos Project - ChargerM5StickC](https://github.com/VolosR/cha
 - **PIR Unit**: [PIR Documentation](https://docs.m5stack.com/en/unit/PIR)
 - **Voltmeter Unit**: [Voltmeter Documentation](https://docs.m5stack.com/en/unit/vmeter)
 - **IR Decoder**: Uses IR unit [IR Unit Documentation](https://docs.m5stack.com/en/unit/ir)
+- **INA219 DC Current Sensor**: 26V ±3.2A [Adafruit Documentation](https://learn.adafruit.com/adafruit-ina219-current-sensor-breakout)
 
 ## Tools
 

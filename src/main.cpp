@@ -28,6 +28,7 @@
 #include "sensors/pir/pir.h"
 #include "sensors/voltmeter/voltmeter.h"
 #include "sensors/irdecoder/irdecoder.h"
+#include "sensors/pwrmeter/pwrmeter.h"
 
 // Tools
 #include "tools/torch/torch.h"
@@ -64,6 +65,7 @@ IUnit *createTof() { return new Tof(spr); }
 IUnit *createGpsUnit() { return new GpsUnit(spr); }
 IUnit *createPir() { return new Pir(spr); }
 IUnit *createVoltmeter() { return new VoltmeterModule(spr); }
+IUnit *createPwrmeter() { return new Pwrmeter(spr); }
 IUnit *createIRDecoder() { return new IRDecoder(spr); }
 IUnit *creatStopwatch() { return new Stopwatch(spr); }
 IUnit *createResistor() { return new Resistor(spr); }
@@ -147,6 +149,7 @@ void setup() {
 	functions[idx++] = createGpsUnit;
 	functions[idx++] = createPir;
 	functions[idx++] = createVoltmeter;
+	functions[idx++] = createPwrmeter;
 	functions[idx++] = createIRDecoder;
 
 	functions[idx++] = createTorch;
