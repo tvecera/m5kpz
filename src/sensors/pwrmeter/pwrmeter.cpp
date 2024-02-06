@@ -19,33 +19,32 @@
 * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-#include "env.h"
+#include "pwrmeter.h"
 
-#define ENV_BMP280_ADDRESS 0x76
 
-Env::Env(LGFX_Sprite *spr) {
+Pwrmeter::Pwrmeter(LGFX_Sprite *spr) {
 	sprite = spr;
 }
 
-bool Env::initSensor() {
+bool Pwrmeter::initSensor() {
 #ifdef EMULATOR
 	return true;
 #else
 #ifdef M5STICK
-	return (Wire.begin(0, 26) && bme280.begin(ENV_BMP280_ADDRESS));
+	return (Wire.begin(0, 26) && ina219.begin());
 #else
 	Wire.setSCL(PORT_A_SCL_PIN);
 	Wire.setSDA(PORT_A_SDA_PIN);
 	Wire.begin();
-	return (bme280.begin(ENV_BMP280_ADDRESS));
+	return (ina219.begin());
 #endif
 #endif
 }
 
-void Env::drawSensorData(uint16_t background) {
-	sprite->setTextColor(TFT_WHITE, background);
+void Pwrmeter::drawSensorData(uint16_t background) {
+	sprite->setTextColor(TFT_WHITE, TFT_BLACK);
 	sprite->setFont(&DSEG7_Classic_Bold_32);
-	sprite->drawString(String(tmp).c_str(), 10, 30);
+	sprite->drawString(String(loadvoltage, 2).c_str(), 10, 30);
 
 	sprite->fillRoundRect(10, 72, DISPLAY_WIDTH - 20, 46, 4, COLOR);
 	sprite->fillRoundRect(10, 123, DISPLAY_WIDTH - 20, 46, 4, COLOR);
@@ -53,32 +52,37 @@ void Env::drawSensorData(uint16_t background) {
 	sprite->setTextDatum(MC_DATUM);
 	sprite->setTextColor(TFT_WHITE, COLOR);
 	sprite->setTextFont(2);
-	sprite->drawString(F("HUMIDITY %"), DISPLAY_WIDTH / 2, 82);
-	sprite->drawString(F("PRESSURE hPa"), DISPLAY_WIDTH / 2, 133);
+	sprite->drawString(F("Current mA"), DISPLAY_WIDTH / 2, 82);
+	sprite->drawString(F("Power W"), DISPLAY_WIDTH / 2, 133);
 	sprite->setFont(&DSEG7_Classic_Bold_17);
-	sprite->drawString(String(hum).c_str(), DISPLAY_WIDTH / 2, 102);
-	sprite->drawString(String(pressure, 2).c_str(), DISPLAY_WIDTH / 2, 153);
+	sprite->drawString(String(current_mA, 2).c_str(), DISPLAY_WIDTH / 2, 102);
+	sprite->drawString(String(busvoltage*current_mA/1000, 3).c_str(), DISPLAY_WIDTH / 2, 153);
+
 }
 
 #ifndef EMULATOR
 
-void Env::timer(void *pvParameters) {
-	auto *instance = static_cast<Env *>(pvParameters);
+void Pwrmeter::timer(void *pvParameters) {
+	auto *instance = static_cast<Pwrmeter *>(pvParameters);
 
-	float timer_tmp;
-	float timer_hum;
-	float timer_pressure;
+	float timer_shuntvoltage = 0;
+  	float timer_busvoltage = 0;
+  	float timer_current_mA = 0;
+  	float timer_loadvoltage = 0;
 
 	while (true) {
-		timer_pressure = instance->bme280.readPressure();
-		timer_pressure = timer_pressure / 100;
-		timer_tmp = instance->dht12.readTemperature();
-		timer_hum = instance->dht12.readHumidity();
-	
-		if (xSemaphoreTake(instance->mutex, portTICK_PERIOD_MS * 10) == pdTRUE) {
-			instance->sensor_tmp = timer_tmp;
-			instance->sensor_hum = timer_hum;
-			instance->sensor_pressure = timer_pressure;
+		
+		if (xSemaphoreTake(instance->mutex, portTICK_PERIOD_MS * 100) == pdTRUE) {
+					
+		timer_shuntvoltage = instance->ina219.getShuntVoltage_mV();
+  		timer_busvoltage = instance->ina219.getBusVoltage_V();
+  		timer_current_mA = instance->ina219.getCurrent_mA();
+  		timer_loadvoltage = timer_busvoltage + (timer_shuntvoltage / 1000);
+
+			instance->shuntvoltage = timer_shuntvoltage;
+			instance->busvoltage = timer_busvoltage;
+			instance->current_mA = timer_current_mA;
+			instance->loadvoltage = timer_loadvoltage;
 			xSemaphoreGive(instance->mutex);
 		}
 	}
@@ -86,8 +90,8 @@ void Env::timer(void *pvParameters) {
 
 #endif
 
-void Env::open() {
-	bool connected = splash(F("ENV HAT"), F("Connect"), EnvUnitImg, 100, 99, true);
+void Pwrmeter::open() {
+	bool connected = splash(F("PWR meter"), F("Connect"), PwrmeterImg, 100, 100, true);
 
 	if (connected) {
 		unit_connected();
@@ -95,9 +99,9 @@ void Env::open() {
 #ifndef EMULATOR
 		mutex = xSemaphoreCreateMutex();
 #ifdef M5STICK
-		xTaskCreatePinnedToCore(timer, "env", 4096, this, 2 | portPRIVILEGE_BIT, &task, 0);
+		xTaskCreatePinnedToCore(timer, "pwrmeter", 4096, this, 2 | portPRIVILEGE_BIT, &task, 0);
 #else
-		xTaskCreate(timer, "enviii", 4096, this, 2 | portPRIVILEGE_BIT, &task);
+		xTaskCreate(timer, "pwrmeter", 4096, this, 2 | portPRIVILEGE_BIT, &task);
 #endif
 #endif
 
@@ -105,18 +109,21 @@ void Env::open() {
 			default_actions();
 
 #ifndef EMULATOR
-			if (xSemaphoreTake(mutex, portTICK_PERIOD_MS * 10) == pdTRUE) {
-				tmp = sensor_tmp;
-				hum = sensor_hum;
-				pressure = sensor_pressure;
+			if (xSemaphoreTake(mutex, portTICK_PERIOD_MS * 100) == pdTRUE) {
+				shuntvoltage = sensor_shuntvoltage;
+				busvoltage = sensor_busvoltage;
+				current_mA = sensor_current_mA;
+				loadvoltage = sensor_loadvoltage;
+
 				xSemaphoreGive(mutex);
 			}
 #else
-			tmp = 24.2;
-			hum = 61.2;
-			pressure = 982.25;
+			shuntvoltage = 0.100;
+			busvoltage = 5.00;
+			current_mA = 1000.0;
+			loadvoltage = busvoltage + (shuntvoltage / 1000);
 #endif
-			drawAll(F("TEMP C"));
+			drawAll(F("Voltage V"));
 			M5.update();
 		}
 	}
